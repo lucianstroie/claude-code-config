@@ -1,4 +1,100 @@
-# Global Development Standards
+# Global Instructions
+
+## Style
+
+- No emojis
+- No em dashes - use hyphens or colons instead
+
+## Node.js
+
+- Use Volta for Node.js version management: `volta install node`, `volta pin node@<version>`
+
+## Python
+
+- Use uv for everything: `uv run`, `uv pip`, `uv venv`
+
+## Stack
+
+- Languages: Rust, Solidity, TypeScript, Python
+- Toolchains: uv (Python), Volta + pnpm (JS), cargo + rustup (Rust), foundry (Solidity), risc0 (zkVM)
+- ZK / Boundless work uses `boundless-cli` and `nj-cli`
+- Terminal-first: Ghostty + tmux; opencode / claude-code / codex as terminal agents
+
+### Solidity / Foundry
+
+- Build, test, and format with `forge build`, `forge test`, `forge fmt`
+- Fork-test against live state with `forge test --fork-url <rpc>`
+- Pin the compiler and dependency versions; snapshot gas on hot paths
+
+## Git
+
+- When committing, use: `git -c user.signingkey=$HOME/.ssh/id_ed25519 -c user.name="Lucian (ai)" commit ...`
+- This signs with Claude's key (no passphrase) and identifies the commit as AI-generated
+- When pushing with git, use: `git -c core.sshCommand="ssh -i $HOME/.ssh/id_ed25519" push origin <BRANCH>`
+- Always push immediately after committing
+
+## Plugins
+
+- The `/plugin` command uses the user's default SSH key which lacks GitHub access
+- When adding marketplaces or installing plugins, clone them manually using the Claude SSH key:
+  - `GIT_SSH_COMMAND="ssh -i $HOME/.ssh/id_ed25519" git clone git@github.com:owner/repo.git $HOME/.claude/plugins/marketplaces/owner-repo`
+  - `GIT_SSH_COMMAND="ssh -i $HOME/.ssh/id_ed25519" git clone git@github.com:owner/plugin.git $HOME/.claude/plugins/plugin-name`
+
+## Epistemology
+
+- Assumptions are the enemy
+- Never guess numerical values - benchmark instead of estimating
+- When uncertain, measure - say "this needs to be measured" rather than inventing statistics
+
+## Safety
+
+- Never download files, packages, or external resources without explicit user approval
+- Ask before running curl, wget, npm install, pip install, or similar download commands
+- Never commit or push secrets, credentials, API keys, or sensitive data to GitHub without explicit approval
+
+## Workflow
+
+### Scaling
+
+- Validate at small scale before scaling up
+- Run a sub-minute version first to verify the full pipeline works
+- When scaling, only the scale parameter should change
+
+### Interaction
+
+- Clarify unclear requests, then proceed autonomously
+- Only ask for help when: scripts timeout (>2min), sudo is needed, or genuine blockers arise
+
+### Ground Truth Clarification
+
+- Simple tasks: execute immediately
+- Complex tasks (refactors, new features, ambiguous requirements): clarify first
+  - Research codebase
+  - Ask targeted questions
+  - Confirm understanding
+  - Persist the plan
+  - Then execute autonomously
+
+### First Principles Reimplementation
+
+- Building from scratch can beat adapting legacy code when:
+  - Implementations are in wrong languages
+  - Code carries historical baggage
+  - Architectural rewrites are needed
+- Approach: understand domain at spec level, choose optimal stack, implement incrementally with human verification
+
+### Constraint Persistence
+
+- When user defines constraints ("never X", "always Y", "from now on"): immediately persist to project's local CLAUDE.md
+- Acknowledge, write, confirm
+
+## Notion
+
+Use `/notion` skill for all Notion operations - skill handles safety confirmations and workflows.
+
+---
+
+# Global Development Standards (Trail of Bits)
 
 Global instructions for all projects. Project-specific CLAUDE.md files override these defaults.
 

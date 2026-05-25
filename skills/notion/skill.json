@@ -1,0 +1,6 @@
+{
+  "name": "notion",
+  "description": "Unified Notion operations - search, read, create, update, upload pages and databases with safety confirmations",
+  "version": "1.0.0",
+  "userInvocable": true
+}

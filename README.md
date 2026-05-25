@@ -4,6 +4,16 @@ Opinionated defaults, documentation, and workflows for Claude Code at Trail of B
 
 > Also see: [skills](https://github.com/trailofbits/skills) · [skills-curated](https://github.com/trailofbits/skills-curated) · [claude-code-devcontainer](https://github.com/trailofbits/claude-code-devcontainer) · [dropkit](https://github.com/trailofbits/dropkit)
 
+---
+
+> **Personal fork** (lucianstroie), customized on top of the Trail of Bits template. `origin` is this fork, `upstream` is `trailofbits/claude-code-config`. Pull their updates selectively with `git fetch upstream && git merge upstream/main`, or re-run `/trailofbits:config`. The ToB standards block in `claude-md-template.md` is kept verbatim so those merges stay clean; personal additions (Stack, Solidity/Foundry, RISC Zero/Boundless) live in the section above it.
+>
+> **Deploy:** run `./install.sh` to symlink this config into `~/.claude` (idempotent, macOS + Linux). It deploys the global dev environment only. Vault/knowledge skills live separately in the Knowledge Bank repo as a project-scoped `.claude/` and load when you work in that repo.
+>
+> **Local model (DGX):** vLLM serves an Anthropic-compatible endpoint at `http://localhost:8000`; use the [Local Models](#local-models) `claude-local` pattern with that base URL.
+
+---
+
 **First-time setup:**
 
 ```bash
