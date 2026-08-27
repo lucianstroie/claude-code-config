@@ -5,6 +5,12 @@
 - No emojis
 - No em dashes - use hyphens or colons instead
 
+## Communicate directly
+
+Use Google developer-doc prose, Stripe information design, and Kernighan's economy: concrete nouns, active voice, complete information, no ornament or em-dash asides. Use HTML or visuals when clearer.
+
+Prefer one sentence, then one paragraph. For complex work: sentence summary, paragraph summary, details. In dialogue use 1-3 sentences and one question. Never use a question tool; ask in chat.
+
 ## Node.js
 
 - Use Volta for Node.js version management: `volta install node`, `volta pin node@<version>`
@@ -28,10 +34,11 @@
 
 ## Git
 
-- When committing, use: `git -c user.signingkey=$HOME/.ssh/id_ed25519 -c user.name="Lucian (ai)" commit ...`
+- When committing, use: `git -c user.signingkey=$HOME/.ssh/id_ed25519_gitlab -c user.name="Zeno MD" commit ...`
 - This signs with Claude's key (no passphrase) and identifies the commit as AI-generated
-- When pushing with git, use: `git -c core.sshCommand="ssh -i $HOME/.ssh/id_ed25519" push origin <BRANCH>`
+- When pushing with git, use: `git -c core.sshCommand="ssh -i $HOME/.ssh/id_ed25519_gitlab" push origin <BRANCH>`
 - Always push immediately after committing
+- Never add a `Co-Authored-By: Claude` trailer or any "Generated with Claude Code" line to commit messages or PR descriptions. This is also enforced by `includeCoAuthoredBy: false` in settings.json.
 
 ## Plugins
 
@@ -39,6 +46,16 @@
 - When adding marketplaces or installing plugins, clone them manually using the Claude SSH key:
   - `GIT_SSH_COMMAND="ssh -i $HOME/.ssh/id_ed25519" git clone git@github.com:owner/repo.git $HOME/.claude/plugins/marketplaces/owner-repo`
   - `GIT_SSH_COMMAND="ssh -i $HOME/.ssh/id_ed25519" git clone git@github.com:owner/plugin.git $HOME/.claude/plugins/plugin-name`
+
+## Engineer like Matt Pocock
+
+- Research primary sources; save cited findings with existing repo docs.
+- Debug from a fast, deterministic reproduction of the exact symptom: minimize, hypothesize, instrument narrowly, fix, regress, clean up.
+- TDD vertical tracer bullets: confirmed seam, failing behavior test, minimal implementation. Reject coupled or tautological tests.
+- Prototype uncertain behavior with disposable, one-command code. Expose state; skip polish. Port only validated decisions.
+- Maintain domain vocabulary. Reserve ADRs for consequential, surprising, hard-to-reverse choices.
+- Prefer Ousterhout deep modules and Feathers seams. Use deletion tests and design-twice; require two adapters before abstraction.
+- Review spec compliance and repo standards separately. Code smells are heuristics.
 
 ## Epistemology
 
