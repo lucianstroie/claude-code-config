@@ -7,6 +7,7 @@
     "CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY": "1",
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
   },
+  "includeCoAuthoredBy": false,
   "permissions": {
     "deny": [
       "Bash(rm -rf *)",
@@ -19,6 +20,23 @@
       "Bash(git push --force*)",
       "Bash(git push *--force*)",
       "Bash(git reset --hard*)",
+      "Bash(wrangler deploy*)",
+      "Bash(wrangler publish*)",
+      "Bash(wrangler login*)",
+      "Bash(wrangler rollback*)",
+      "Bash(wrangler delete*)",
+      "Bash(wrangler versions deploy*)",
+      "Bash(wrangler versions upload*)",
+      "Bash(wrangler triggers deploy*)",
+      "Bash(wrangler pages deploy*)",
+      "Bash(wrangler secret put*)",
+      "Bash(npx wrangler deploy*)",
+      "Bash(npx wrangler login*)",
+      "Bash(npx wrangler pages deploy*)",
+      "Bash(pnpm run deploy*)",
+      "Bash(pnpm deploy*)",
+      "Bash(npm run deploy*)",
+      "Bash(yarn deploy*)",
       "Edit(~/.bashrc)",
       "Edit(~/.zshrc)",
       "Edit(~/.ssh/**)",
@@ -42,6 +60,7 @@
       "Read(~/Library/Application Support/**/solflare*/**)"
     ]
   },
+  "model": "opus[1m]",
   "enableAllProjectMcpServers": false,
   "hooks": {
     "PreToolUse": [
@@ -55,6 +74,14 @@
           {
             "type": "command",
             "command": "CMD=$(jq -r '.tool_input.command'); if echo \"$CMD\" | grep -qE 'git[[:space:]]+push.*(main|master)'; then echo 'BLOCKED: Use feature branches, not direct push to main' >&2; exit 2; fi"
+          },
+          {
+            "type": "command",
+            "command": "CMD=$(jq -r '.tool_input.command'); if echo \"$CMD\" | grep -qi 'wrangler' && echo \"$CMD\" | grep -qiE '(^|[^a-z])(deploy|publish|login|rollback|delete|upload|init|secret)([^a-z]|$)'; then echo 'BLOCKED: Wrangler write commands are disabled. Production goes live via Workers Builds (versions upload) plus manual promotion in the Cloudflare dashboard. Read-only verbs (whoami, versions list, deployments list, tail) are allowed.' >&2; exit 2; fi"
+          },
+          {
+            "type": "command",
+            "command": "CMD=$(jq -r '.tool_input.command'); if echo \"$CMD\" | grep -qiE '(pnpm|npm|yarn|bun)([[:space:]]+run)?[[:space:]]+deploy([^a-z]|$)'; then echo 'BLOCKED: the deploy script invokes wrangler. Production goes live via Workers Builds plus manual promotion in the Cloudflare dashboard.' >&2; exit 2; fi"
           }
         ]
       }
@@ -90,6 +117,13 @@
     }
   },
   "alwaysThinkingEnabled": true,
-  "effortLevel": "high",
-  "skipDangerousModePermissionPrompt": true
+  "effortLevel": "xhigh",
+  "voice": {
+    "enabled": true,
+    "mode": "hold"
+  },
+  "skipDangerousModePermissionPrompt": true,
+  "theme": "dark",
+  "voiceEnabled": true,
+  "tui": "fullscreen"
 }
