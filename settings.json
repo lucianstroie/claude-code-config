@@ -4,7 +4,8 @@
   "env": {
     "DISABLE_ERROR_REPORTING": "1",
     "CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY": "1",
-    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
+    "CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH": "3"
   },
   "includeCoAuthoredBy": false,
   "permissions": {
@@ -116,7 +117,6 @@
       }
     }
   },
-  "alwaysThinkingEnabled": true,
   "effortLevel": "xhigh",
   "modelSettings": {
     "claude-opus-5-5": {

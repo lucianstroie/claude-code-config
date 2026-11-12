@@ -142,9 +142,10 @@ claude-local() {
 Copy `settings.json` to `~/.claude/settings.json` (or merge entries into your existing file). The `$schema` key enables autocomplete and validation in editors that support JSON Schema. The template includes:
 
 - **`env` (privacy)** -- disables three non-essential outbound streams: Statsig telemetry (`DISABLE_TELEMETRY`), Sentry error reporting (`DISABLE_ERROR_REPORTING`), and feedback surveys (`CLAUDE_CODE_DISABLE_FEEDBACK_SURVEY`). Avoid the umbrella `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` -- it also disables auto-updates.
-- **`env` (agent teams)** -- `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` enables [multi-agent teams](https://code.claude.com/docs/en/agent-teams) where one session coordinates multiple teammates with independent context windows. Experimental -- known limitations around session resumption and task coordination.
+- **`env` (agent teams)** -- `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` enables [multi-agent teams](https://code.claude.com/docs/en/agent-teams) where one session coordinates multiple teammates with independent context windows. Experimental -- known limitations around session resumption and task coordination. Note that it also changes ordinary delegation: while agent teams are on, a subagent Claude names on its own launches as a full teammate, so teams can form when you didn't ask for one.
+- **`env` (subagent depth)** -- `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH: "3"` pins how many layers of subagents can nest below the main agent. Three is the current built-in default, so this changes nothing today -- the point is that the default is delivered by a remote feature flag (observed in the binary; the docs don't say so), so without pinning it the effective nesting limit can move without a release. Claude 5 models delegate more readily than previous ones, and this limit is enforced at spawn time rather than being prompt guidance. Set it to `1` to stop subagents from spawning their own. The companion `CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS` (default `20`) is left unset here: 20 is already generous, and picking a lower number is a throughput guess. Both env vars exist since Claude Code v2.1.217; the built-in depth default of 3 dates from v2.1.219, so earlier releases default differently.
 - **`enableAllProjectMcpServers: false`** -- this is the default, set explicitly so it doesn't get flipped by accident. Project `.mcp.json` files live in git, so a compromised repo could ship malicious MCP servers.
-- **`alwaysThinkingEnabled: true`** -- persists [extended thinking](https://code.claude.com/docs/en/common-workflows#use-extended-thinking-thinking-mode) across sessions. Toggle per-session with `Option+T`. Adds latency and cost on simple tasks; worth it for complex reasoning.
+- **No `alwaysThinkingEnabled`** -- absent and `true` behave identically: thinking is enabled automatically for supported models unless the setting is `false`, so setting it to `true` bought nothing. Setting it to `false` still disables thinking on Opus 5 (at `high` effort or below) and on Sonnet 5; Fable 5 can't turn thinking off at all. `MAX_THINKING_TOKENS=0` does the same and takes precedence over the setting. What's gone on Claude 5 is manual thinking budgets, so [**effort**](https://platform.claude.com/docs/en/build-with-claude/effort) is the lever for the intelligence-versus-cost tradeoff -- set it with `/effort`. Anthropic's guidance is `high` as the default, `xhigh` for the hardest coding and agentic work, and `low` or `medium` liberally for routine work where quality holds, since lower settings on Claude 5 often beat `xhigh` on the previous generation.
 - **`permissions`** -- deny rules that block reading credentials/secrets and editing shell config (see [Sandboxing](#sandboxing))
 - **`cleanupPeriodDays: 365`** -- keeps conversation history for a year instead of the default 30 days, so `/insights` has more data
 - **`hooks`** -- two `PreToolUse` hooks on Bash that block `rm -rf` and direct push to main (see [Hooks](#hooks))
@@ -173,15 +174,33 @@ The `statusLine` entry in `settings.json` points to this script. Requires `jq`.
 
 ### Global CLAUDE.md
 
-The global `CLAUDE.md` file at `~/.claude/CLAUDE.md` sets default instructions for every Claude Code session. It covers development philosophy (no speculative features, no premature abstraction, replace don't deprecate), code quality hard limits (function length, complexity, line width), language-specific toolchains for Python (`uv`, `ruff`, `ty`), Node/TypeScript (`oxlint`, `vitest`), Rust (`clippy`, `cargo deny`), Bash, and GitHub Actions, plus testing methodology, code review order, and workflow conventions (commits, hooks, PRs).
+The global `CLAUDE.md` file at `~/.claude/CLAUDE.md` sets default instructions for every Claude Code session. It's split into two layers so that each session only pays for what it needs.
 
-Copy the template into place:
+**`claude-md-template.md`** is the always-loaded layer, kept to about 100 lines. It carries only what has to hold before any file is read: task scoping, communication and progress-reporting standards, quality gates, testing methodology, code review order, the CLI tool table, one default toolchain per language, and workflow conventions (commits, hooks, subagents, memory, PRs).
+
+**`rules/`** is the on-demand layer. Each file is a [path-scoped rule](https://code.claude.com/docs/en/memory#path-specific-rules) carrying the detailed configuration for one language -- ruff and clippy lint blocks, tsconfig strictness flags, supply-chain settings, workflow hardening. The `paths:` frontmatter means a rule loads only when Claude touches a matching file, so a Rust project never pays context for the Python guidance:
+
+| file | loads when Claude touches |
+| ---- | ------------------------- |
+| `rules/python.md` | `*.py`, `*.pyi`, `*.ipynb`, `pyproject.toml`, `uv.lock` |
+| `rules/rust.md` | `*.rs`, `Cargo.toml`, `Cargo.lock` |
+| `rules/typescript.md` | `*.ts`, `*.tsx`, `*.mts`, `*.cts`, `*.js`, `*.jsx`, `*.mjs`, `*.cjs`, `package.json`, `tsconfig.json` |
+| `rules/bash.md` | `*.sh`, `*.bash` |
+| `rules/github-actions.md` | `.github/workflows/**`, `.github/actions/**`, `dependabot.yml`, `dependabot.yaml` |
+
+The globs match file paths, not contents, so extensionless shell scripts (git hooks, `bin/` tools) never trigger `rules/bash.md` -- the always-loaded tool table still covers `shellcheck` and `shfmt` for those.
+
+`/trailofbits:config` installs both layers and handles a non-default `CLAUDE_CONFIG_DIR`. To do it by hand:
 
 ```bash
+mkdir -p ~/.claude/rules
 cp claude-md-template.md ~/.claude/CLAUDE.md
+cp rules/*.md ~/.claude/rules/
 ```
 
-Review and customize it for your own preferences. The template is opinionated -- adjust the language sections, tool choices, and hard limits to match your stack. For background on how CLAUDE.md files work (hierarchy, auto memory, modular rules, imports), see [Manage Claude's memory](https://code.claude.com/docs/en/memory).
+Review and customize both layers -- adjust the toolchain table and the rule files to match your stack. One rule of thumb when deciding which layer something goes in: path-scoped rules are not automatically re-injected after auto-compaction -- they come back only when Claude next reads a matching file -- so anything that must hold unconditionally belongs in `CLAUDE.md`, and anything that must hold *regardless of what Claude decides* belongs in a [hook](#hooks).
+
+For background on how CLAUDE.md files work, see [Manage Claude's memory](https://code.claude.com/docs/en/memory). To debug which files actually loaded and why, use the `InstructionsLoaded` hook; `/context` shows the session-start set. Note that `@path` imports load at launch like the rest of `CLAUDE.md`, so they help organization but don't reduce context -- path-scoped rules are the mechanism that does.
 
 ## Configuration
 
@@ -194,6 +213,8 @@ At Trail of Bits we run Claude Code in bypass-permissions mode (`--dangerously-s
 Claude Code has a native sandbox that provides filesystem and network isolation using OS-level primitives (Seatbelt on macOS, bubblewrap on Linux). Enable it by typing `/sandbox` in a session. In auto-allow mode, Bash commands that stay within sandbox boundaries run without permission prompts.
 
 **Default behavior:** Writes are restricted to the current working directory and its subdirectories. Reads are unrestricted -- the agent can still read `~/.ssh`, `~/.aws`, etc. Network access is limited to explicitly allowed domains.
+
+When a worktree helper gets blocked this way, the danger isn't the blocked write -- it's the silent fallback to `git checkout -b` in the shared directory, after which the agent believes it has isolation it doesn't have. Either configure an in-repo path (`git worktree add .worktrees/<branch>`) or let the Agent tool's `isolation: "worktree"` handle placement.
 
 **Hardening reads:** The `settings.json` template includes `Read` and `Edit` deny rules that block access to credentials and secrets:
 
@@ -441,7 +462,17 @@ For an example of a well-structured project CLAUDE.md, see [crytic/slither's CLA
 
 ## Output Styles
 
-Enable the **Explanatory** [output style](https://code.claude.com/docs/en/output-styles) (`/output-style explanatory` or `"outputStyle": "Explanatory"` in `settings.json`) when getting familiar with a new codebase. Claude explains frameworks and code patterns as it works, adding "★ Insight" blocks with reasoning and design choices alongside its normal output. Useful when auditing unfamiliar code, reviewing a language you don't write daily, or onboarding onto a client engagement. The tradeoff is context: longer responses mean earlier compaction. Switch back to the default when you want speed. You can also [create custom styles](https://code.claude.com/docs/en/output-styles) as markdown files in `~/.claude/output-styles/`.
+An [output style](https://code.claude.com/docs/en/output-styles) modifies Claude Code's system prompt. Pick one with `/config` under **Output style**, or set `"outputStyle"` in a settings file. The standalone `/output-style` command was removed in v2.1.91. Changes take effect after `/clear` or in a new session.
+
+Output styles are not in the `settings.json` template because the useful ones are situational and one has a version floor. Two are worth knowing about:
+
+**Concise** (requires Claude Code v2.1.237 or later) leads with the result, skips preamble and narration, and keeps responses short by default, while doing the engineering work as thoroughly as the Default style. Ask for an explanation and you get one in full; error reports, security warnings, and destructive-action confirmations always keep their complete content.
+
+It overlaps with the Communication section of the global CLAUDE.md, intentionally: an output style sits in the system prompt and triggers periodic reminders during the conversation, which holds up better in long sessions than a CLAUDE.md instruction. Run both.
+
+**Explanatory** adds educational "★ Insight" blocks explaining frameworks and code patterns as Claude works. Useful when auditing unfamiliar code, reviewing a language you don't write daily, or onboarding onto a client engagement. The tradeoff is context: longer responses mean earlier compaction.
+
+Note that `/config` writes your selection to `.claude/settings.local.json` at the project level, which is a narrower scope than the user-level `~/.claude/settings.json` this repo's template targets. Set `outputStyle` in the user file directly if you want it everywhere. You can also [create custom styles](https://code.claude.com/docs/en/output-styles) as markdown files in `~/.claude/output-styles/` -- set `keep-coding-instructions: true` in the frontmatter, or a custom style drops Claude Code's built-in software engineering instructions.
 
 ## Context Management
 
@@ -513,7 +544,7 @@ Browser automation via the [Claude in Chrome](https://chromewebstore.google.com/
 
 ## Fast Mode
 
-`/fast` toggles fast mode. Same Opus 4.6 model, ~2.5x faster output, 6x the cost per token. Leave it off by default.
+`/fast` toggles fast mode: the same Opus model with faster output, at 2x the token cost ($10/$50 per MTok versus $5/$25). It does not downgrade to a smaller model. Available on Opus 5 and Opus 4.8 only. Elsewhere it isn't a silent no-op: switching to an unsupported model (Opus 4.6, Opus 4.7) turns fast mode off, and on Sonnet or Haiku enabling it switches you to Opus. Not supported in the VS Code extension. Leave it off by default.
 
 The only time fast mode is worth it is **tight interactive loops** -- you're debugging live, iterating on output, and every second of latency costs you focus. If you're about to kick off an autonomous run (`/fix-issue`, a swarm, anything you walk away from), turn it off first. The agent doesn't benefit from lower latency; you're just burning money.
 
