@@ -34,9 +34,10 @@ Prefer one sentence, then one paragraph. For complex work: sentence summary, par
 
 ## Git
 
-- When committing, use: `git -c user.signingkey=$HOME/.ssh/id_ed25519_gitlab -c user.name="Zeno MD" commit ...`
-- This signs with Claude's key (no passphrase) and identifies the commit as AI-generated
-- When pushing with git, use: `git -c core.sshCommand="ssh -i $HOME/.ssh/id_ed25519_gitlab" push origin <BRANCH>`
+- When committing, use: `git -c gpg.format=ssh -c user.signingkey=$HOME/.ssh/id_ed25519_signing -c user.name="Zeno MD" commit -S ...`
+- This signs with Claude's signing key (no passphrase, registered on GitHub as a signing key) and identifies the commit as AI-generated. `-S` and `gpg.format=ssh` are required: without them git does not sign
+- When pushing to GitHub, use: `git -c core.sshCommand="ssh -i $HOME/.ssh/id_ed25519 -o IdentitiesOnly=yes" push origin <BRANCH>`
+- When pushing to GitLab, use: `git -c core.sshCommand="ssh -i $HOME/.ssh/id_ed25519_gitlab" push origin <BRANCH>`
 - Always push immediately after committing
 - Never add a `Co-Authored-By: Claude` trailer or any "Generated with Claude Code" line to commit messages or PR descriptions. This is also enforced by `includeCoAuthoredBy: false` in settings.json.
 
