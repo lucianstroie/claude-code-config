@@ -15,19 +15,6 @@ Work from `/tmp/depbot-eval-{repo-slug}` for all subsequent phases.
 Execute every phase below sequentially. Do not stop or ask for
 confirmation at any phase.
 
-## Turn Budget Management
-
-If you are running as a background agent with a `max_turns` cap:
-
-- **At 75% of turns used:** Stop launching new evaluations. Merge
-  any PRs already evaluated as PASS. Skip Phase 5's detailed
-  reports — print only the summary table.
-- **At 90% of turns used:** Immediately print whatever summary you
-  have and stop. Do not start new evaluations or re-tests.
-- **Prioritize merging over analysis.** If you must choose between
-  thorough analysis of the last PR and merging already-evaluated
-  PASS PRs, merge first.
-
 ## Phase 0: Dependabot Config Audit
 
 If `$OPTIONS` includes `--skip-config-audit`, skip this entire

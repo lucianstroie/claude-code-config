@@ -34,9 +34,10 @@ Prefer one sentence, then one paragraph. For complex work: sentence summary, par
 
 ## Git
 
-- When committing, use: `git -c user.signingkey=$HOME/.ssh/id_ed25519_gitlab -c user.name="Zeno MD" commit ...`
-- This signs with Claude's key (no passphrase) and identifies the commit as AI-generated
-- When pushing with git, use: `git -c core.sshCommand="ssh -i $HOME/.ssh/id_ed25519_gitlab" push origin <BRANCH>`
+- When committing, use: `git -c gpg.format=ssh -c user.signingkey=$HOME/.ssh/id_ed25519_signing -c user.name="Zeno MD" commit -S ...`
+- This signs with Claude's signing key (no passphrase, registered on GitHub as a signing key) and identifies the commit as AI-generated. `-S` and `gpg.format=ssh` are required: without them git does not sign
+- When pushing to GitHub, use: `git -c core.sshCommand="ssh -i $HOME/.ssh/id_ed25519 -o IdentitiesOnly=yes" push origin <BRANCH>`
+- When pushing to GitLab, use: `git -c core.sshCommand="ssh -i $HOME/.ssh/id_ed25519_gitlab" push origin <BRANCH>`
 - Always push immediately after committing
 - Never add a `Co-Authored-By: Claude` trailer or any "Generated with Claude Code" line to commit messages or PR descriptions. This is also enforced by `includeCoAuthoredBy: false` in settings.json.
 
@@ -116,205 +117,105 @@ Use `/notion` skill for all Notion operations - skill handles safety confirmatio
 Global instructions for all projects. Project-specific CLAUDE.md files override these defaults.
 
 - Prefer Exa AI (`mcp__exa__web_search_exa`) over `WebSearch` for all web searches
-- Use skills proactively when they match the task — suggest relevant ones, don't block on them
+- Use skills proactively when they match the task
+- When adding dependencies, runtimes, CI actions, or tool versions, look up the current stable version — never assume from memory unless the user provides one
 
-## Philosophy
+## Scope
 
-- **No speculative features** - Don't add features, flags, or configuration unless users actively need them
-- **No premature abstraction** - Don't create utilities until you've written the same code three times
-- **Clarity over cleverness** - Prefer explicit, readable code over dense one-liners
-- **Justify new dependencies** - Each dependency is attack surface and maintenance burden
-- **No phantom features** - Don't document or validate features that aren't implemented
-- **Replace, don't deprecate** - When a new implementation replaces an old one, remove the old one entirely. No backward-compatible shims, dual config formats, or migration paths. Proactively flag dead code — it adds maintenance burden and misleads both developers and LLMs.
-- **Verify at every level** - Set up automated guardrails (linters, type checkers, pre-commit hooks, tests) as the first step, not an afterthought. Prefer structure-aware tools (ast-grep, LSPs, compilers) over text pattern matching. Review your own output critically. Every layer catches what the others miss.
-- **Bias toward action** - Decide and move for anything easily reversed; state your assumption so the reasoning is visible. Ask before committing to interfaces, data models, architecture, or destructive/write operations on external services.
-- **Finish the job** - Don't stop at the minimum that technically satisfies the request. Handle the edge cases you can see. Clean up what you touched. If something is broken adjacent to your change, flag it. But don't invent new scope — there's a difference between thoroughness and gold-plating.
-- **Agent-native by default** - Design so agents can achieve any outcome users can. Tools are atomic primitives; features are outcomes described in prompts. Prefer file-based state for transparency and portability. When adding UI capability, ask: can an agent achieve this outcome too?
+Deliver what was asked, at the scope intended. If the request seems mistaken or a better approach exists, say so in a sentence and continue with the task as asked rather than quietly narrowing, widening, or transforming it. Finish the whole task — the edge cases you can see, cleanup of what you touched, adjacent breakage flagged — but stop short of actions clearly beyond it.
 
-## Code Quality
+Don't add features, refactor, or introduce abstractions beyond what the task requires. A bug fix doesn't need surrounding cleanup, and a one-shot operation usually doesn't need a helper. Don't design for hypothetical future requirements: do the simplest thing that works well. Don't add error handling, fallbacks, or validation for scenarios that cannot happen — trust internal code and framework guarantees, and validate only at system boundaries (user input, external APIs, untrusted files).
 
-### Hard limits
+When the user is describing a problem, asking a question, or thinking out loud rather than requesting a change, the deliverable is your assessment. Report your findings and stop; don't apply a fix until they ask for one. Before running a command that changes system state (restarts, deletes, config edits, force-pushes), check that the evidence actually supports that specific action.
 
-1. ≤100 lines/function, cyclomatic complexity ≤8
-2. ≤5 positional params
-3. 100-char line length
-4. Absolute imports only — no relative (`..`) paths
-5. Google-style docstrings on non-trivial public APIs
+Replace, don't deprecate. When a new implementation replaces an old one, remove the old one entirely — no backward-compatible shims, dual config formats, or migration paths. Proactively flag dead code.
 
-### Zero warnings policy
+Justify new dependencies. Each one is attack surface and maintenance burden.
 
-Fix every warning from every tool — linters, type checkers, compilers, tests. If a warning truly can't be fixed, add an inline ignore with a justification comment. Never leave warnings unaddressed; a clean output is the baseline, not the goal.
+## Communication
 
-### Comments
+Lead with the outcome. Your first sentence after finishing should answer "what happened" or "what did you find"; supporting detail and reasoning come after. Keep output short by being selective about what you include — drop details that don't change what the reader does next — not by compressing into fragments, abbreviations, or arrow chains.
 
-Code should be self-documenting. No commented-out code—delete it. If you need a comment to explain WHAT the code does, refactor the code instead.
+Final summaries are for a reader who didn't watch the work. Drop working shorthand, write complete sentences, spell out terms, and give files, commits, and flags their own plain-language clause.
 
-### Error handling
+Match the length of written documents to what the task needs. Reports, Markdown files, and summaries written to disk should cover the substance without padding — no filler sections, redundant summaries, or boilerplate.
 
-- Fail fast with clear, actionable messages
-- Never swallow exceptions silently
-- Include context (what operation, what input, suggested fix)
+Before reporting progress on a long task, audit each claim against a tool result from this session. Only report work you can point to evidence for; if something is not yet verified, say so explicitly. If tests fail, say so with the output; if a step was skipped, say that.
 
-### Reviewing code
+Don't end your turn on a promise: if your last paragraph is a plan, a question you can answer yourself, or "I'll now do X," do that work now with tool calls. End the turn when the task is complete or you're blocked on something only the user can provide.
 
-Evaluate in order: architecture → code quality → tests → performance. Before reviewing, sync to latest remote (`git fetch origin`).
+Use plain, factual language everywhere: commits, PRs, comments, summaries. A bug fix is a bug fix, not a "critical stability improvement."
 
-For each issue: describe concretely with file:line references, present options with tradeoffs when the fix isn't obvious, recommend one, and ask before proceeding.
+## Quality gates
 
-### Testing
+Automated guardrails are the enforcement layer, not this file. Setting up linters, type checkers, formatters, and pre-commit hooks is the first step of a new project, not an afterthought. Prefer structure-aware tools (ast-grep, LSPs, compilers) over text pattern matching.
 
-**Test behavior, not implementation.** Tests should verify what code does, not how. If a refactor breaks your tests but not your code, the tests were wrong.
+Zero warnings: fix every warning from every tool. If a warning truly can't be fixed, add an inline ignore with a justification comment.
 
-**Test edges and errors, not just the happy path.** Empty inputs, boundaries, malformed data, missing files, network failures — bugs live in edges. Every error path the code handles should have a test that triggers it.
+Code should be self-documenting. No commented-out code — delete it. If a comment explains WHAT the code does, refactor instead; comments explain WHY.
 
-**Mock boundaries, not logic.** Only mock things that are slow (network, filesystem), non-deterministic (time, randomness), or external services you don't control.
+## Testing
 
-**Verify tests catch failures.** Break the code, confirm the test fails, then fix. Use mutation testing (`cargo-mutants`, `mutmut`) to verify systematically. Use property-based testing (`proptest`, `hypothesis`) for parsers, serialization, and algorithms.
+Test edges and errors, not just the happy path — empty inputs, boundaries, malformed data, missing files, network failures. Every error path the code handles should have a test that triggers it.
 
-## Development
+Mock boundaries, not logic: only things that are slow, non-deterministic, or external services you don't control.
 
-When adding dependencies, CI actions, or tool versions, always look up the current stable version — never assume from memory unless the user provides one.
+Verify tests catch failures: break the code, confirm the test fails, then fix. Use mutation testing (`cargo-mutants`, `mutmut`) to verify systematically, and property-based testing (`proptest`, `hypothesis`) for parsers, serialization, and algorithms.
 
-### CLI tools
+## Code review
 
-| tool | replaces | usage |
-|------|----------|-------|
-| `rg` (ripgrep) | grep | `rg "pattern"` - 10x faster regex search |
-| `fd` | find | `fd "*.py"` - fast file finder |
-| `ast-grep` | - | `ast-grep --pattern '$FUNC($$$)' --lang py` - AST-based code search |
-| `shellcheck` | - | `shellcheck script.sh` - shell script linter |
-| `shfmt` | - | `shfmt -i 2 -w script.sh` - shell formatter |
-| `actionlint` | - | `actionlint .github/workflows/` - GitHub Actions linter |
-| `zizmor` | - | `zizmor .github/workflows/` - Actions security audit |
-| `prek` | pre-commit | `prek run` - fast git hooks (Rust, no Python) |
-| `wt` | git worktree | `wt switch branch` - manage parallel worktrees |
-| `trash` | rm | `trash file` - moves to macOS Trash (recoverable). **Never use `rm -rf`** |
+Before reviewing, sync to latest remote (`git fetch origin`). Evaluate in order: architecture → code quality → tests → performance.
 
-Prefer `ast-grep` over ripgrep when searching for code structure (function calls, class definitions, imports, pattern matching across arguments). Use ripgrep for literal strings and log messages.
+Report every issue you find, including ones you are uncertain about or consider low-severity — do not filter for importance or confidence while finding. For each finding, include file:line, an estimated severity, and your confidence, so filtering and ranking can happen downstream. When the fix isn't obvious, present options with tradeoffs and recommend one. Ask before applying fixes.
 
-### Python
+## Tools
 
-**Runtime:** 3.13 with `uv venv`
+| tool           | replaces     | usage                                                              |
+| -------------- | ------------ | ------------------------------------------------------------------ |
+| `rg` (ripgrep) | grep         | `rg "pattern"` — fast regex search                                 |
+| `fd`           | find         | `fd "*.py"` — fast file finder                                     |
+| `ast-grep`     | —            | `ast-grep --pattern '$FUNC($$$)' --lang py` — AST-based search      |
+| `shellcheck`   | —            | shell script linter                                                |
+| `shfmt`        | —            | `shfmt -i 2 -w script.sh` — shell formatter                        |
+| `actionlint`   | —            | GitHub Actions linter                                              |
+| `zizmor`       | —            | GitHub Actions security audit                                      |
+| `prek`         | pre-commit   | `prek run` — fast git hooks                                        |
+| `wt`           | git worktree | `wt switch branch` — terminal worktree management (subagents use `isolation: "worktree"`) |
+| `trash`        | rm           | recoverable delete on macOS. **Never `rm -rf`** (enforced by hook) |
 
-| purpose | tool |
-|---------|------|
-| deps & venv | `uv` |
-| lint & format | `ruff check` · `ruff format` |
-| static types | `ty check` |
-| tests | `pytest -q` |
+On Linux and in CI, where `trash` isn't available, move files to a gitignored `.trash/` instead of deleting them.
 
-**Always use uv, ruff, and ty** over pip/poetry, black/pylint/flake8, and mypy/pyright — they're faster and stricter. Configure `ty` strictness via `[tool.ty.rules]` in pyproject.toml. Use `uv_build` for pure Python, `hatchling` for extensions.
+Prefer `ast-grep` over ripgrep when searching for code structure; use ripgrep for literal strings and log messages.
 
-Tests in `tests/` directory mirroring package structure. Supply chain: `pip-audit` before deploying, pin exact versions (`==` not `>=`), verify hashes with `uv pip install --require-hashes`.
+### Toolchains
 
-### Node/TypeScript
+Default tool per language. Detailed configuration — lint rule sets, strictness flags, supply-chain settings — lives in the path-scoped rules in `~/.claude/rules/`, which load automatically when you touch a matching file.
 
-**Runtime:** Node 22 LTS, ESM only (`"type": "module"`)
-
-| purpose | tool |
-|---------|------|
-| lint | `oxlint` |
-| format | `oxfmt` |
-| test | `vitest` |
-| types | `tsc --noEmit` |
-
-**Always use oxlint and oxfmt** over eslint/prettier — they're faster and stricter. Enable `typescript`, `import`, `unicorn` plugins.
-
-**tsconfig.json strictness** — enable all of these:
-```jsonc
-"strict": true,
-"noUncheckedIndexedAccess": true,
-"exactOptionalPropertyTypes": true,
-"noImplicitOverride": true,
-"noPropertyAccessFromIndexSignature": true,
-"verbatimModuleSyntax": true,
-"isolatedModules": true
-```
-
-Colocated `*.test.ts` files. Supply chain: `pnpm audit --audit-level=moderate` before installing, pin exact versions (no `^` or `~`), enforce 24-hour publish delay (`pnpm config set minimumReleaseAge 1440`), block postinstall scripts (`pnpm config set ignore-scripts true`).
-
-### Rust
-
-**Runtime:** Latest stable via `rustup`
-
-| purpose | tool |
-|---------|------|
-| build & deps | `cargo` |
-| lint | `cargo clippy --all-targets --all-features -- -D warnings` |
-| format | `cargo fmt` |
-| test | `cargo test` |
-| supply chain | `cargo deny check` (advisories, licenses, bans) |
-| safety check | `cargo careful test` (stdlib debug assertions + UB checks) |
-
-**Style:**
-- Prefer `for` loops with mutable accumulators over iterator chains
-- Shadow variables through transformations (no `raw_x`/`parsed_x` prefixes)
-- No wildcard matches; avoid `matches!` macro—explicit destructuring catches field changes
-- Use `let...else` for early returns; keep happy path unindented
-
-**Type design:**
-- Newtypes over primitives (`UserId(u64)` not `u64`)
-- Enums for state machines, not boolean flags
-- `thiserror` for libraries, `anyhow` for applications
-- `tracing` for logging (`error!`/`warn!`/`info!`/`debug!`), not println
-
-**Optimization:**
-- Write efficient code by default — correct algorithm, appropriate data structures, no unnecessary allocations
-- Profile before micro-optimizing; measure after
-
-**Cargo.toml lints:**
-```toml
-[lints.clippy]
-pedantic = { level = "warn", priority = -1 }
-# Panic prevention
-unwrap_used = "deny"
-expect_used = "warn"
-panic = "deny"
-panic_in_result_fn = "deny"
-unimplemented = "deny"
-# No cheating
-allow_attributes = "deny"
-# Code hygiene
-dbg_macro = "deny"
-todo = "deny"
-print_stdout = "deny"
-print_stderr = "deny"
-# Safety
-await_holding_lock = "deny"
-large_futures = "deny"
-exit = "deny"
-mem_forget = "deny"
-# Pedantic relaxations (too noisy)
-module_name_repetitions = "allow"
-similar_names = "allow"
-```
-
-### Bash
-
-All scripts must start with `set -euo pipefail`. Lint: `shellcheck script.sh && shfmt -d script.sh`
-
-### GitHub Actions
-
-Pin actions to SHA hashes with version comments: `actions/checkout@<full-sha>  # vX.Y.Z` (use `persist-credentials: false`). Scan workflows with `zizmor` before committing. Configure Dependabot with 7-day cooldowns and grouped updates. Use `uv` ecosystem (not `pip`) for Python projects so Dependabot updates `uv.lock`.
+| language   | use                                                        | not                                       |
+| ---------- | ---------------------------------------------------------- | ----------------------------------------- |
+| Python     | `uv`, `ruff`, `ty`, `pytest`                               | pip/poetry, black/flake8/pylint, mypy     |
+| Node/TS    | `pnpm`, `oxlint`, `oxfmt`, `vitest`, `tsc --noEmit`        | npm/yarn, eslint, prettier, jest          |
+| Rust       | `cargo clippy -- -D warnings`, `cargo fmt`, `cargo deny`   | —                                         |
+| Bash       | `shellcheck`, `shfmt`                                      | —                                         |
+| Actions    | `actionlint`, `zizmor`                                     | —                                         |
 
 ## Workflow
 
-**Before committing:**
-1. Re-read your changes for unnecessary complexity, redundant code, and unclear naming
-2. Run relevant tests — not the full suite
-3. Run linters and type checker — fix everything before committing
+**Before committing:** run linters, the type checker, and the tests relevant to the change (the full suite when it's fast enough to be the default). Fix everything before committing.
 
 **Commits:**
-- Imperative mood, ≤72 char subject line, one logical change per commit
+
+- Imperative mood, ≤72 char subject, one logical change per commit
 - Never amend/rebase commits already pushed to shared branches
-- Never push directly to main — use feature branches and PRs
-- Never commit secrets, API keys, or credentials — use `.env` files (gitignored) and environment variables
+- Never push directly to main — feature branches and PRs
+- Never commit secrets, API keys, or credentials — gitignored `.env` files and environment variables
 
-**Hooks and worktrees:**
-- Install prek in every repo (`prek install`). Run `prek run` before committing. Configure auto-updates: `prek auto-update --cooldown-days 7`
-- Parallel subagents require worktrees. Each subagent MUST work in its own worktree (`wt switch <branch>`), not the main repo. Never share working directories.
+**Hooks:** install prek in every repo (`prek install`); `prek run` before committing; `prek auto-update --cooldown-days 7`.
 
-**Pull requests:**
-Describe what the code does now — not discarded approaches, prior iterations, or alternatives. Only describe what's in the diff.
+**Subagents:** delegate for large, genuinely independent, parallelizable tracks of work — a wide multi-file investigation, parallel feature tracks. Don't delegate work you can finish yourself in a handful of tool calls, and don't spawn subagents to double-check routine work. On long autonomous builds, a periodic fresh-context verifier subagent checking work against the spec is worthwhile. Prefer long-lived subagents that keep context across subtasks, and keep working while they run.
 
-Use plain, factual language. A bug fix is a bug fix, not a "critical stability improvement." Avoid: critical, crucial, essential, significant, comprehensive, robust, elegant.
+Subagents inherit the parent's working directory, so parallel agents that write files need real isolation: pass `isolation: "worktree"` when spawning them. A `cd` or `wt switch` inside a subagent doesn't persist and isolates nothing.
+
+**Memory:** record corrections and confirmed approaches alike in auto memory, including *why* they mattered — the reasoning is the part that isn't recoverable from the repo later.
+
+**Pull requests:** describe what the code does now — not discarded approaches, prior iterations, or alternatives. Only describe what's in the diff.

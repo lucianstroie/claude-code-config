@@ -9,7 +9,7 @@ set -euo pipefail
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CLAUDE_DIR="${CLAUDE_HOME:-$HOME/.claude}"
 
-mkdir -p "$CLAUDE_DIR" "$CLAUDE_DIR/commands" "$CLAUDE_DIR/skills" "$CLAUDE_DIR/agents" "$CLAUDE_DIR/config"
+mkdir -p "$CLAUDE_DIR" "$CLAUDE_DIR/commands" "$CLAUDE_DIR/skills" "$CLAUDE_DIR/agents" "$CLAUDE_DIR/rules" "$CLAUDE_DIR/config"
 
 link() {
   # link <src> <dst>: replace an existing symlink, back up a real file/dir, then symlink
@@ -29,7 +29,7 @@ link "$REPO_DIR/scripts/statusline.sh" "$CLAUDE_DIR/statusline.sh"
 chmod +x "$REPO_DIR/scripts/statusline.sh"
 
 # Per-item links so we never clobber plugin- or project-provided entries.
-for d in commands skills agents; do
+for d in commands skills agents rules; do
   for item in "$REPO_DIR/$d"/*; do
     [ -e "$item" ] || continue
     link "$item" "$CLAUDE_DIR/$d/$(basename "$item")"

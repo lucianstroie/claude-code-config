@@ -186,12 +186,6 @@ Address all P1–P3 findings. For each finding, either:
   the churn (e.g. a stylistic disagreement or an impossible edge
   case). Document the reasoning inline.
 
-After addressing all findings, review your own fixes: read the
-diff of changes made in this step and verify each fix is correct,
-doesn't introduce new issues, and doesn't regress other parts of
-the implementation. If you spot a problem, fix it before
-proceeding.
-
 Then re-run the full quality pipeline (build, test, lint). Iterate
 until clean.
 

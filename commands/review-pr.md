@@ -120,11 +120,6 @@ guessing.
 P4 findings are informational — note them but do not fix unless
 trivial.
 
-After addressing all findings, review your own fixes: read the
-diff of changes made in this step and verify each fix is correct,
-doesn't introduce new issues, and doesn't regress other parts of
-the PR. If you spot a problem, fix it before proceeding.
-
 ## 3. Verify
 
 ### 3a. Discover project checks (CI is the source of truth)
