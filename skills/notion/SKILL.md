@@ -1,3 +1,8 @@
+---
+name: notion
+description: Search, read, create, update, and upload Notion pages and databases, with a confirmation preview before every write. Use for /notion and whenever the user asks to work in Notion or gives a Notion URL.
+---
+
 # Notion
 
 Unified skill for all Notion operations with intelligent routing and safety confirmations.
@@ -230,8 +235,6 @@ Use `notion-update-page` with properties to move to trash (soft delete only).
 ### UPLOAD (confirmation required)
 
 **Trigger:** `/notion upload [file]` or "put this in Notion"
-
-Preserves the existing notion-upload workflow:
 
 **Step 1 - Identify Content:**
 - If file path provided: read that file

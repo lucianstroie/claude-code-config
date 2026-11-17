@@ -1,7 +1,7 @@
 ---
 description: Scrape docs site to numbered markdown files
 argument-hint: <url>
-allowed-tools: [WebFetch, Write, Bash, Read, Glob, Task, AskUserQuestion]
+allowed-tools: [WebFetch, Write, Bash, Read, Glob, Task]
 model: sonnet
 ---
 
@@ -12,12 +12,12 @@ Scrape documentation from: $ARGUMENTS
 1. Parse URL to suggest folder path:
    - Extract domain and path segments
    - Propose: `References/{Domain}/{PathSegment}`
-   - Use AskUserQuestion to confirm or get custom path
+   - Ask in chat to confirm the path or get a custom one
 
 2. Fetch main page with WebFetch, extract navigation:
    - Look for sidebar nav, table of contents, or sitemap
    - Build ordered list of pages with hierarchy
-   - Use AskUserQuestion to show sitemap and confirm
+   - Show the sitemap in chat and ask the user to confirm it
 
 3. Use Task agent to scrape each page:
    - Fetch page content
@@ -37,7 +37,7 @@ Scrape documentation from: $ARGUMENTS
      - Include key params, concepts, or gotchas where relevant
    - **Common Patterns**: Cross-cutting concerns, integration points, frequently combined operations
 
-Example index.md structure:
+Illustrative index.md (from a Railgun docs scrape; take the sections from the site being scraped):
 ```markdown
 # Railgun Documentation Index
 

@@ -51,15 +51,11 @@ Also ensure:
 
 **Only proceed with Figma MCP tools after confirming the server is installed.**
 
-## Figma MCP Tool Usage Protocol (MANDATORY)
+## Figma MCP Tool Usage
 
-### Critical Rule: ALWAYS Use This Workflow When User Provides Figma Link
+When the user provides a Figma link or node ID, start with metadata: it gives the hierarchy and variant names that the later calls are read against. Then get the design context for details. Use the screenshot to check layout, not as the only source, and fetch variables when the design relies on Figma variables or you are checking token consistency.
 
-When user provides a Figma link or node ID, **YOU MUST follow this exact tool sequence**. Do NOT skip steps or change the order.
-
-### Required Tool Order: Metadata → Context → Screenshot → Variables
-
-#### Step 1: Get Metadata (REQUIRED FIRST)
+#### Step 1: Get Metadata
 ```
 Tool: mcp__figma-desktop__get_metadata
 Extract:
@@ -71,7 +67,7 @@ Extract:
 
 **Look for:** Component or frame? Variant properties? Children organization? Naming patterns?
 
-#### Step 2: Get Design Context (REQUIRED SECOND)
+#### Step 2: Get Design Context
 ```
 Tool: mcp__figma-desktop__get_design_context
 Extract:
@@ -84,13 +80,13 @@ Extract:
 
 **Look for:** Which Figma variables? Spacing values? Hard-coded values?
 
-#### Step 3: Get Screenshot (REQUIRED THIRD)
+#### Step 3: Get Screenshot
 ```
 Tool: mcp__figma-desktop__get_screenshot
 Use for: Visual verification, understanding layout
 ```
 
-#### Step 4: Get Variables (REQUIRED FOURTH)
+#### Step 4: Get Variables (when needed)
 ```
 Tool: mcp__figma-desktop__get_variable_defs
 When: Design uses Figma variables extensively or checking token consistency
@@ -149,10 +145,7 @@ Would you like me to:
 3. Only implement frontend and document backend requirements
 ```
 
-**Only proceed WITHOUT asking if user explicitly states:**
-- "implement both frontend and backend"
-- "complete the full implementation including API"
-- "yes, make the backend changes too"
+Skip this question only when the user has already asked for the backend work as well (for example, "implement both frontend and backend").
 
 ### Mock Data Pattern
 
@@ -366,25 +359,9 @@ export default function PageName() {
 4. Update only UI layer
 5. Ask before removing functionality
 
-## Quality Checklist
+## Scope Recap
 
-Before providing code, verify:
-
-- [ ] Used metadata → context → screenshot → variables order
-- [ ] Checked for existing components first
-- [ ] Used composition over creation
-- [ ] Mapped Figma variants to code props
-- [ ] Used project's design system tokens/variables
-- [ ] No `any` types, proper TypeScript
-- [ ] Included accessibility attributes
-- [ ] Responsive design following project conventions
-- [ ] Theme/dark mode support if applicable
-- [ ] Correct file naming and location
-- [ ] Added component displayName
-- [ ] JSDoc comments for complex logic
-- [ ] **All code in frontend directory only**
-- [ ] **No backend changes without permission**
-- [ ] **Used mock data if backend needed**
+Keep all code in the frontend directory, make no backend changes without permission, and use mock data where the backend is not ready.
 
 ## Examples
 
