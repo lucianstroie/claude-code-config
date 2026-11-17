@@ -1,7 +1,11 @@
+---
+description: "End-to-end: plan, implement, test, review, fix, push, and PR for a GitHub issue."
+argument-hint: <issue-number>
+---
+
 # Fix GitHub Issue
 
-@description End-to-end: plan, implement, test, review, fix, push, and PR for a GitHub issue.
-@arguments $ISSUE_NUMBER: GitHub issue number to fix
+`$ISSUE_NUMBER` below is the issue number passed as the argument: $ARGUMENTS
 
 Read GitHub Issue #$ISSUE_NUMBER from the canonical repo
 (`gh issue view $ISSUE_NUMBER --repo <owner/name>`) thoroughly.
@@ -148,7 +152,7 @@ command if one was found; otherwise fall back to the default.
 
 | step         | command                                        |
 |--------------|------------------------------------------------|
-| build        | per project (`npm run build`, `tsc`, etc.)     |
+| build        | per project (`pnpm build`, `tsc`, etc.)        |
 | test         | `vitest` (or project test script)              |
 | lint         | `oxlint` (or project lint script)              |
 | format       | `oxfmt --check` (or project format script)     |

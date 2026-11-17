@@ -1,7 +1,11 @@
+---
+description: Evaluate and merge dependabot PRs with parallel builds, dependency-aware batching, and transitive dep analysis.
+argument-hint: "<org/repo> [--skip-config-audit]"
+---
+
 # Merge Dependabot PRs
 
-@description Evaluate and merge dependabot PRs with parallel builds, dependency-aware batching, and transitive dep analysis.
-@arguments $REPO: GitHub org/repo (e.g., trailofbits/algo). $OPTIONS: Optional flags — "--skip-config-audit" skips Phase 0 (use in batch runs where config audit is a separate pass).
+Arguments: $ARGUMENTS. The first argument is `$REPO`, a GitHub org/repo (e.g., trailofbits/algo). The rest are `$OPTIONS`: `--skip-config-audit` skips Phase 0 (use in batch runs where config audit is a separate pass).
 
 Clone $REPO if not already available locally:
 
@@ -233,7 +237,7 @@ in the repo directory: {repo_path}
 **Build command:** {build_command}
 **Test command:** {test_command}
 
-Execute every step. Do not skip steps. Do not ask for confirmation.
+Run the steps in order. This run is unattended: do not ask for confirmation.
 
 **STEP 1 — Checkout**
 

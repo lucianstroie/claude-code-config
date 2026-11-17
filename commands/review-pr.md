@@ -1,7 +1,11 @@
+---
+description: Review an existing PR with parallel agents, fix findings, and push.
+argument-hint: <pr-number>
+---
+
 # Review and Fix PR
 
-@description Review an existing PR with parallel agents, fix findings, and push.
-@arguments $PR_NUMBER: GitHub PR number to review and fix
+`$PR_NUMBER` below is the PR number passed as the argument: $ARGUMENTS
 
 Read PR #$PR_NUMBER thoroughly using `gh pr view`. Understand the
 full context: description, linked issues, commit history, and the
@@ -47,14 +51,12 @@ Launch these Task tool agents **in parallel with Pass A** — all
 
 ```bash
 codex review --base <upstream-remote>/<base-branch> \
-  -c model='"gpt-5.3-codex"' \
   -c model_reasoning_effort='"xhigh"'
 ```
 
+- Codex uses its configured default model
 - `--base` does not accept custom prompts (codex reads
   `AGENTS.md` at the repo root if one exists)
-- If `gpt-5.3-codex` fails with an auth error, retry with
-  `gpt-5.2-codex`
 - Set `timeout: 600000` on the Bash call
 - Tell the agent to summarize findings only — skip
   `[thinking]`/`[exec]` blocks and sandbox warnings
@@ -82,7 +84,6 @@ git diff <upstream-remote>/<base-branch>...HEAD > /tmp/pr-review-diff.txt
 
 # Pipe prompt via stdin to avoid shell metacharacter issues
 cat /tmp/pr-review-prompt.txt | gemini -p - \
-  -m gemini-3-pro-preview \
   --yolo
 ```
 
@@ -195,7 +196,7 @@ command if one was found; otherwise fall back to the default.
 
 | step         | command                                        |
 |--------------|------------------------------------------------|
-| build        | per project (`npm run build`, `tsc`, etc.)     |
+| build        | per project (`pnpm build`, `tsc`, etc.)        |
 | test         | `vitest` (or project test script)              |
 | lint         | `oxlint` (or project lint script)              |
 | format       | `oxfmt --check` (or project format script)     |
@@ -225,8 +226,6 @@ failing the pipeline.
     (with brief reasoning), and confirmation that the quality
     pipeline passes
 - Push the branch (regular push, not force-push)
-- Delete any todo files in `todos/` that were created by the
-  review and are now resolved
 
 ## 5. PR comment
 
