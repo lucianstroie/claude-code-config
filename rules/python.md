@@ -22,7 +22,7 @@ Use `uv`, `ruff`, and `ty` over pip/poetry, black/pylint/flake8, and mypy/pyrigh
 
 ## Structural limits belong in ruff config
 
-Don't restate limits in prose — encode them so the linter enforces them. The baseline:
+Don't restate limits in prose: encode them so the linter enforces them. The baseline:
 
 ```toml
 [tool.ruff]
@@ -51,7 +51,7 @@ ban-relative-imports = "all"
 
 Each section needs its rule family in `select` to take effect: `C90` for `max-complexity`, `PL` for `max-args` (PLR0913), `max-positional-args` (PLR0917) and `max-statements` (PLR0915), `D` for the docstring convention, `TID` for the relative-import ban (TID252). Selecting `D` makes docstrings mandatory on every public module, class, and function; the per-file-ignores block keeps tests out of that.
 
-Two limits to know about. `max-args` caps *total* arguments, so `max-positional-args` is what actually bounds positional ones — and PLR0917 was preview-gated before ruff 0.16, so on an older ruff it silently does nothing and that limit disappears. Ruff has no direct max-lines-per-function rule either; `max-statements` is the closest proxy, so treat function length as a review concern rather than assuming lint covers it.
+Two limits to know about. `max-args` caps *total* arguments, so `max-positional-args` is what actually bounds positional ones, and PLR0917 was preview-gated before ruff 0.16, so on an older ruff it silently does nothing and that limit disappears. Ruff has no direct max-lines-per-function rule either; `max-statements` is the closest proxy, so treat function length as a review concern rather than assuming lint covers it.
 
 ## Types
 
